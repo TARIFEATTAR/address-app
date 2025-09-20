@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Address Confirmation App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+
+    <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-lg mx-4">
+        
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-800">Address Confirmation</h1>
+            <p class="text-gray-500 mt-2">Enter an address to verify its existence using Google's Geocoding API.</p>
+        </div>
+
+        <!-- Input Form -->
+        <div class="space-y-4">
+            <div>
+                <label for="addressInput" class="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                <textarea 
+                    id="addressInput"
+                    rows="4"
+                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow"
+                    placeholder="e.g., 1600 Amphitheatre Parkway, Mountain View, CA 94043"
+                ></textarea>
+            </div>
+            
+            <button 
+                id="checkButton" 
+                class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-transform transform hover:scale-105"
+            >
+                Verify Address
+            </button>
+        </div>
+        
+        <!-- Results Section -->
+        <div id="result" class="mt-8 text-center hidden">
+            <div id="statusBox" class="p-4 rounded-lg mb-4 text-left">
+                <p id="statusMessage" class="font-semibold text-lg"></p>
+                <p id="formattedAddress" class="text-sm mt-1"></p>
+            </div>
+            <a 
+                id="mapsLink" 
+                href="#" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                class="text-blue-600 hover:underline font-semibold mt-2 hidden"
+            >View on Google Maps</a>
+        </div>
+        
+    </div>
+
+    <script>
+        const addressInput = document.getElementById('addressInput');
+        const checkButton = document.getElementById('checkButton');
+        const resultDiv = document.getElementById('result');
+        const statusBox = document.getElementById('statusBox');
+        const statusMessage = document.getElementById('statusMessage');
+        const formattedAddress = document.getElementById('formattedAddress');
+        const mapsLink = document.getElementById('mapsLink');
+
+        // --- Your API key is correctly placed here ---
+        const API_KEY = 'AIzaSyBRvG5Fo2s-ovz9UTGfB-pjKxWpEMLbq9w';
+
+        checkButton.addEventListener('click', async () => {
+            const address = addressInput.value.trim();
+            const apiKey = API_KEY; // Use the constant
+
+            resultDiv.classList.remove('hidden');
+            mapsLink.classList.add('hidden');
+            formattedAddress.textContent = '';
+
+
+            if (address === '') { // Simplified check
+                statusBox.className = 'p-4 rounded-lg mb-4 text-left bg-red-100 text-red-800';
+                statusMessage.textContent = 'Please enter an address.';
+                return;
+            }
+            
+            // Set loading state
+            statusBox.className = 'p-4 rounded-lg mb-4 text-left bg-gray-100 text-gray-800';
+            statusMessage.textContent = 'Verifying address...';
+
+            const encodedAddress = encodeURIComponent(address);
+            const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodedAddress}&key=${apiKey}`;
+
+            try {
+                const response = await fetch(geocodeUrl);
+                const data = await response.json();
+
+                if (data.status === 'OK') {
+                    const result = data.results[0];
+                    const locationType = result.geometry.location_type;
+                    const fullAddress = result.formatted_address;
+
+                    formattedAddress.textContent = `Suggested Address: ${fullAddress}`;
+                    mapsLink.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`;
+                    mapsLink.textContent = `Open "${fullAddress}" in Google Maps`;
+                    mapsLink.classList.remove('hidden');
+
+                    if (locationType === 'ROOFTOP') {
+                        statusBox.className = 'p-4 rounded-lg mb-4 text-left bg-green-100 text-green-800';
+                        statusMessage.textContent = 'Confirmed: Precise Location';
+                    } else if (locationType === 'RANGE_INTERPOLATED') {
+                        statusBox.className = 'p-4 rounded-lg mb-4 text-left bg-green-100 text-green-800';
+                        statusMessage.textContent = 'Confirmed: Street Address (Estimated)';
+                    } else {
+                        statusBox.className = 'p-4 rounded-lg mb-4 text-left bg-yellow-100 text-yellow-800';
+                        statusMessage.textContent = 'Partial Match: Approximate Location Found';
+                    }
+
+                } else if (data.status === 'ZERO_RESULTS') {
+                    statusBox.className = 'p-4 rounded-lg mb-4 text-left bg-red-100 text-red-800';
+                    statusMessage.textContent = 'Address Not Found';
+                    formattedAddress.textContent = 'The provided address could not be located.';
+                } else {
+                    statusBox.className = 'p-4 rounded-lg mb-4 text-left bg-red-100 text-red-800';
+                    statusMessage.textContent = `API Error: ${data.status}`;
+                    formattedAddress.textContent = data.error_message || 'Check your API key and permissions.';
+                }
+
+            } catch (error) {
+                statusBox.className = 'p-4 rounded-lg mb-4 text-left bg-red-100 text-red-800';
+                statusMessage.textContent = 'Network Error';
+                formattedAddress.textContent = 'Could not connect to Google Maps API. Please check your connection and try again.';
+                console.error('Error fetching geocode data:', error);
+            }
+        });
+    </script>
+
+</body>
+</html>
+
+
+
