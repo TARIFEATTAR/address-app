@@ -13,6 +13,16 @@
         .copy-btn-feedback {
             transition: background-color 0.3s ease;
         }
+        .form-section {
+            display: none;
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e5e7eb;
+        }
+        #shippingEstimatorContent {
+            transition: max-height 0.3s ease-in-out;
+            overflow: hidden;
+        }
     </style>
 </head>
 <body class="bg-gray-100 flex items-center justify-center min-h-screen py-12">
@@ -82,10 +92,10 @@
                 ✉️ Draft Customer Email
             </button>
             <button 
-                id="geminiButton"
-                class="w-full bg-purple-600 text-white font-bold py-3 px-4 mt-4 rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-transform transform hover:scale-105 hidden"
+                id="geminiTypeButton"
+                class="w-full bg-blue-600 text-white font-bold py-3 px-4 mt-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-transform transform hover:scale-105 hidden"
             >
-                ✨ Suggest Delivery Instructions
+                🔍 Identify Address Type
             </button>
         </div>
 
@@ -100,13 +110,50 @@
             </div>
             <button id="useCorrectionButton" class="text-sm bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-1 px-3 mt-3 rounded-md">Use this Address</button>
         </div>
-        <div id="geminiResult" class="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200 hidden">
-            <p class="font-semibold text-gray-800">Suggested Instructions:</p>
-            <p id="geminiOutput" class="text-gray-600 mt-2 whitespace-pre-wrap"></p>
-        </div>
          <div id="geminiEmailResult" class="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200 hidden">
             <p class="font-semibold text-gray-800">Draft Email to Customer:</p>
             <p id="geminiEmailOutput" class="text-gray-600 mt-2 whitespace-pre-wrap border border-dashed border-gray-300 p-3 rounded-md"></p>
+        </div>
+        <div id="geminiTypeResult" class="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200 hidden">
+            <p class="font-semibold text-gray-800">Address Type Analysis:</p>
+            <p id="geminiTypeOutput" class="text-gray-600 mt-2 whitespace-pre-wrap"></p>
+        </div>
+
+        <!-- Shipping Estimator Section -->
+        <div id="shippingEstimatorContainer" class="form-section">
+            <button id="shippingEstimatorToggle" class="w-full flex justify-between items-center text-left p-4 bg-gray-100 hover:bg-gray-200 rounded-lg focus:outline-none transition-colors">
+                <h2 class="text-xl font-bold text-gray-800">Shipping Rate Estimator</h2>
+                <svg id="shippingChevron" class="w-6 h-6 transform transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+            </button>
+            <div id="shippingEstimatorContent" class="hidden mt-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="originZip" class="block text-sm font-medium text-gray-700">Origin ZIP Code</label>
+                        <input type="text" id="originZip" value="94601" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                     <div>
+                        <label for="weight" class="block text-sm font-medium text-gray-700">Weight (oz)</label>
+                        <input type="number" id="weight" value="2" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <p class="block text-sm font-medium text-gray-700">Package Dimensions (inches)</p>
+                    <div class="grid grid-cols-3 gap-2 mt-1">
+                        <input type="number" id="length" placeholder="L" value="10" class="block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        <input type="number" id="width" placeholder="W" value="7" class="block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        <input type="number" id="height" placeholder="H" value="1" class="block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                </div>
+                <button id="getRatesButton" class="w-full bg-green-600 text-white font-bold py-3 px-4 mt-6 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-transform transform hover:scale-105">
+                    💰 Get Shipping Estimates
+                </button>
+            </div>
+        </div>
+        
+        <div id="shippingResult" class="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200 hidden">
+            <p class="font-semibold text-gray-800">Estimated Shipping Rates:</p>
+            <p class="text-xs text-gray-500 mb-2 italic">Note: These are AI-powered estimates and not official quotes.</p>
+            <div id="shippingOutput" class="text-gray-600 mt-2 whitespace-pre-wrap"></div>
         </div>
         
     </div>
@@ -125,10 +172,6 @@
         const mapsLink = document.getElementById('mapsLink');
         
         // Gemini Feature Elements
-        const geminiButton = document.getElementById('geminiButton');
-        const geminiResultDiv = document.getElementById('geminiResult');
-        const geminiOutput = document.getElementById('geminiOutput');
-        
         const geminiCorrectButton = document.getElementById('geminiCorrectButton');
         const geminiCorrectResultDiv = document.getElementById('geminiCorrectResult');
         const geminiCorrectOutput = document.getElementById('geminiCorrectOutput');
@@ -139,8 +182,27 @@
         const geminiEmailResultDiv = document.getElementById('geminiEmailResult');
         const geminiEmailOutput = document.getElementById('geminiEmailOutput');
 
+        const geminiTypeButton = document.getElementById('geminiTypeButton');
+        const geminiTypeResultDiv = document.getElementById('geminiTypeResult');
+        const geminiTypeOutput = document.getElementById('geminiTypeOutput');
+
+        // Shipping Estimator Elements
+        const shippingEstimatorContainer = document.getElementById('shippingEstimatorContainer');
+        const shippingEstimatorToggle = document.getElementById('shippingEstimatorToggle');
+        const shippingEstimatorContent = document.getElementById('shippingEstimatorContent');
+        const shippingChevron = document.getElementById('shippingChevron');
+        const getRatesButton = document.getElementById('getRatesButton');
+        const shippingResultDiv = document.getElementById('shippingResult');
+        const shippingOutput = document.getElementById('shippingOutput');
+        const originZip = document.getElementById('originZip');
+        const weight = document.getElementById('weight');
+        const length = document.getElementById('length');
+        const width = document.getElementById('width');
+        const height = document.getElementById('height');
+
         // --- Your Google Maps Geocoding API key ---
-        const API_KEY = 'AIzaSyBRvG5Fo2s-ovz9UTGfB-pjKxWpEMLbq9w';
+        // IMPORTANT: Replace the placeholder with your actual API key
+        const API_KEY = 'PASTE_YOUR_GOOGLE_MAPS_API_KEY_HERE';
         
         // State variables
         let confirmedAddress = '';
@@ -165,12 +227,16 @@
             // Hide all results on new search
             resultDiv.classList.add('hidden');
             mapsLink.classList.add('hidden');
-            geminiButton.classList.add('hidden');
             geminiCorrectButton.classList.add('hidden');
             geminiEmailButton.classList.add('hidden');
-            geminiResultDiv.classList.add('hidden');
+            geminiTypeButton.classList.add('hidden');
             geminiCorrectResultDiv.classList.add('hidden');
             geminiEmailResultDiv.classList.add('hidden');
+            geminiTypeResultDiv.classList.add('hidden');
+            shippingEstimatorContainer.style.display = 'none';
+            shippingEstimatorContent.classList.add('hidden');
+            shippingChevron.classList.remove('rotate-180');
+            shippingResultDiv.classList.add('hidden');
             addressComponentsDiv.classList.add('hidden');
             copyVerifiedBtn.classList.add('hidden');
             formattedAddress.textContent = '';
@@ -180,6 +246,13 @@
             if (address === '') {
                 statusBox.className = 'p-4 rounded-lg mb-4 text-left bg-red-100 text-red-800';
                 statusMessage.textContent = 'Please enter an address.';
+                return;
+            }
+
+            if (apiKey === 'PASTE_YOUR_GOOGLE_MAPS_API_KEY_HERE') {
+                statusBox.className = 'p-4 rounded-lg mb-4 text-left bg-red-100 text-red-800';
+                statusMessage.textContent = 'API Key Not Set';
+                formattedAddress.textContent = 'Please add your Google Maps API key to the script.';
                 return;
             }
             
@@ -196,15 +269,16 @@
                 if (data.status === 'OK') {
                     const result = data.results[0];
                     const fullAddress = result.formatted_address;
+                    confirmedAddress = fullAddress;
 
                     formattedAddress.textContent = `Suggested Address: ${fullAddress}`;
                     mapsLink.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`;
                     mapsLink.textContent = `Open "${fullAddress}" in Google Maps`;
                     mapsLink.classList.remove('hidden');
                     
-                    confirmedAddress = fullAddress;
-                    geminiButton.classList.remove('hidden'); 
                     copyVerifiedBtn.classList.remove('hidden');
+                    geminiTypeButton.classList.remove('hidden');
+                    shippingEstimatorContainer.style.display = 'block';
                     
                     displayAddressComponents(result.address_components);
 
@@ -239,28 +313,25 @@
 
         function displayAddressComponents(components) {
             addressComponentsDiv.innerHTML = '';
-            const mapping = {
-                street_number: 'Street No.',
-                route: 'Street',
-                locality: 'City',
-                administrative_area_level_1: 'State',
-                country: 'Country',
-                postal_code: 'ZIP Code'
-            };
+            const mapping = { street_number: 'Street No.', route: 'Street', locality: 'City', administrative_area_level_1: 'State', country: 'Country', postal_code: 'ZIP Code' };
             let html = '<div class="grid grid-cols-2 gap-x-4 gap-y-1">';
-            for (const component of components) {
+            components.forEach(component => {
                 const type = component.types[0];
-                if (mapping[type]) {
-                    html += `<div><strong>${mapping[type]}:</strong> ${component.long_name}</div>`;
-                }
-            }
+                if (mapping[type]) html += `<div><strong>${mapping[type]}:</strong> ${component.long_name}</div>`;
+            });
             html += '</div>';
             addressComponentsDiv.innerHTML = html;
             addressComponentsDiv.classList.remove('hidden');
         }
 
         function copyToClipboard(text, button) {
-            navigator.clipboard.writeText(text).then(() => {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed"; textArea.style.left = "-9999px";
+            document.body.appendChild(textArea);
+            textArea.focus(); textArea.select();
+            try {
+                document.execCommand('copy');
                 const originalText = button.textContent;
                 button.textContent = 'Copied!';
                 button.classList.add('bg-green-200');
@@ -268,36 +339,38 @@
                     button.textContent = originalText;
                     button.classList.remove('bg-green-200');
                 }, 2000);
-            }).catch(err => {
-                console.error('Failed to copy text: ', err);
-            });
+            } catch (err) { console.error('Failed to copy text: ', err); }
+            document.body.removeChild(textArea);
         }
         
         copyVerifiedBtn.addEventListener('click', () => copyToClipboard(confirmedAddress, copyVerifiedBtn));
         copyCorrectionBtn.addEventListener('click', () => copyToClipboard(geminiCorrectOutput.textContent, copyCorrectionBtn));
 
-        // --- Gemini Feature Event Listeners ---
-        geminiButton.addEventListener('click', () => getDeliveryInstructions(confirmedAddress));
+        // --- Gemini & Shipping Feature Event Listeners ---
         geminiCorrectButton.addEventListener('click', () => getCorrectedAddress(originalAddress));
         geminiEmailButton.addEventListener('click', () => draftCustomerEmail(originalAddress));
+        geminiTypeButton.addEventListener('click', () => getAddressType(confirmedAddress));
+        getRatesButton.addEventListener('click', getShippingEstimates);
+        
+        shippingEstimatorToggle.addEventListener('click', () => {
+            shippingEstimatorContent.classList.toggle('hidden');
+            shippingChevron.classList.toggle('rotate-180');
+        });
         
         useCorrectionButton.addEventListener('click', () => {
             const corrected = geminiCorrectOutput.textContent.trim();
-            if (corrected) {
-                addressInput.value = corrected;
-                checkButton.click();
-            }
+            if (corrected) { addressInput.value = corrected; checkButton.click(); }
         });
 
-        // --- Gemini API Call Functions ---
-        async function callGemini(systemPrompt, userQuery, button, outputElement) {
-            outputElement.parentElement.classList.remove('hidden');
+        // --- API Call Functions ---
+        async function callGemini(systemPrompt, userQuery, button, outputElement, resultDiv) {
+            resultDiv.classList.remove('hidden');
             outputElement.textContent = 'Generating...';
             button.disabled = true;
             const originalButtonText = button.innerHTML;
             button.innerHTML = '✨ Thinking...';
 
-            const geminiApiKey = ""; // Handled by environment
+            const geminiApiKey = API_KEY; // <<< THIS IS THE FIX
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${geminiApiKey}`;
 
             const payload = {
@@ -306,14 +379,9 @@
             };
 
             try {
-                let response;
-                let delay = 1000;
+                let response; let delay = 1000;
                 for (let i = 0; i < 5; i++) {
-                    response = await fetch(apiUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
+                    response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
                     if (response.status !== 429) break;
                     await new Promise(resolve => setTimeout(resolve, delay));
                     delay *= 2;
@@ -323,12 +391,8 @@
                 const result = await response.json();
                 const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
 
-                if (text) {
-                    outputElement.textContent = text.trim();
-                } else {
-                    outputElement.textContent = 'The model returned an empty response.';
-                    console.error('Unexpected API response:', result);
-                }
+                if (text) { outputElement.textContent = text.trim(); } 
+                else { outputElement.textContent = 'The model returned an empty response.'; console.error('Unexpected API response:', result); }
             } catch (error) {
                 outputElement.textContent = 'Failed to get a suggestion. See console for details.';
                 console.error('Error calling Gemini API:', error);
@@ -338,28 +402,43 @@
             }
         }
 
-        function getDeliveryInstructions(address) {
-            const systemPrompt = `You are a helpful logistics assistant... The instruction must be a single, clear sentence.`;
-            const userQuery = `Generate a delivery instruction for this address: "${address}"`;
-            callGemini(systemPrompt, userQuery, geminiButton, geminiOutput);
-        }
-
         function getCorrectedAddress(address) {
-            const systemPrompt = `You are an expert address correction service... Return only the corrected address.`;
+            const systemPrompt = `You are an expert address correction service. Return only the corrected address.`;
             const userQuery = `Correct this potentially invalid address: "${address}"`;
-            callGemini(systemPrompt, userQuery, geminiCorrectButton, geminiCorrectOutput);
+            callGemini(systemPrompt, userQuery, geminiCorrectButton, geminiCorrectOutput, geminiCorrectResultDiv);
         }
 
         function draftCustomerEmail(address) {
-             const systemPrompt = `You are a customer service agent for an e-commerce store. A customer's address could not be verified. Draft a friendly, concise, and professional email to the customer.
-- Start with a friendly greeting (e.g., "Hello,").
-- State the purpose: you're preparing their order for shipment but ran into a small issue verifying their address.
-- Mention the address they provided.
-- Politely ask them to reply to the email to confirm or correct their address.
-- End with a thank you and a closing (e.g., "Best regards,").
-- Keep the tone helpful and not accusatory.`;
+            const systemPrompt = `You are a customer service agent drafting a friendly, professional email to a customer whose address could not be verified. Ask them to confirm or correct their details.`;
             const userQuery = `Draft the email for an issue with this address: "${address}"`;
-            callGemini(systemPrompt, userQuery, geminiEmailButton, geminiEmailOutput);
+            callGemini(systemPrompt, userQuery, geminiEmailButton, geminiEmailOutput, geminiEmailResultDiv);
+        }
+
+        function getAddressType(address) {
+            const systemPrompt = `You are a logistics expert. Classify the address as Residential, Commercial/Business, PO Box, or Military. Provide the type and a one-sentence explanation.`;
+            const userQuery = `Classify this address: "${address}"`;
+            callGemini(systemPrompt, userQuery, geminiTypeButton, geminiTypeOutput, geminiTypeResultDiv);
+        }
+
+        function getShippingEstimates() {
+            const pkg = {
+                origin: originZip.value,
+                l: length.value,
+                w: width.value,
+                h: height.value,
+                weight: weight.value
+            };
+            const systemPrompt = `You are a shipping rate estimator for an e-commerce company. Provide estimated shipping costs for a package based on the user's details.
+- Analyze the origin, destination, and package specs.
+- Provide estimates for USPS, UPS, and FedEx for their most common economy services (like Ground).
+- Format the output as a simple list with the carrier, service name, and estimated price.
+- Clearly state these are non-binding estimates.`;
+            const userQuery = `Estimate shipping rates for a package with these details:
+- From ZIP: ${pkg.origin}
+- To Address: "${confirmedAddress}"
+- Dimensions: ${pkg.l}"L x ${pkg.w}"W x ${pkg.h}"H
+- Weight: ${pkg.weight} oz`;
+            callGemin(systemPrompt, userQuery, getRatesButton, shippingOutput, shippingResultDiv);
         }
 
     </script>
