@@ -10,33 +10,37 @@
         body {
             font-family: 'Inter', sans-serif;
         }
+        .copy-btn-feedback {
+            transition: background-color 0.3s ease;
+        }
     </style>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+<body class="bg-gray-100 flex items-center justify-center min-h-screen py-12">
 
     <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-lg mx-4">
         
         <!-- Header -->
         <div class="text-center mb-8">
             <h1 class="text-3xl font-bold text-gray-800">Address Confirmation</h1>
-            <p class="text-gray-500 mt-2">Enter an address to verify its existence using Google's Geocoding API.</p>
+            <p class="text-gray-500 mt-2">A powerful tool for your customer service agents.</p>
         </div>
 
         <!-- Input Form -->
         <div class="space-y-4">
-            <div>
+            <div class="relative">
                 <label for="addressInput" class="block text-sm font-medium text-gray-700 mb-1">Address</label>
                 <textarea 
                     id="addressInput"
                     rows="4"
-                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow"
+                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow pr-10"
                     placeholder="e.g., 1600 Amphitheatre Parkway, Mountain View, CA 94043"
                 ></textarea>
+                <button id="clearInputBtn" class="absolute top-8 right-2 text-gray-400 hover:text-gray-600 p-1 rounded-full hidden">&times;</button>
             </div>
             
             <button 
                 id="checkButton" 
-                class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-transform transform hover:scale-105"
+                class="w-full bg-black text-white font-bold py-3 px-4 rounded-lg hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-transform transform hover:scale-105"
             >
                 Verify Address
             </button>
@@ -45,9 +49,17 @@
         <!-- Results Section -->
         <div id="result" class="mt-8 text-center hidden">
             <div id="statusBox" class="p-4 rounded-lg mb-4 text-left">
-                <p id="statusMessage" class="font-semibold text-lg"></p>
-                <p id="formattedAddress" class="text-sm mt-1"></p>
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p id="statusMessage" class="font-semibold text-lg"></p>
+                        <p id="formattedAddress" class="text-sm mt-1"></p>
+                    </div>
+                    <button id="copyVerifiedBtn" class="copy-btn-feedback text-sm bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-1 px-3 ml-2 rounded-md hidden">Copy</button>
+                </div>
+                 <!-- Address Components Breakdown -->
+                <div id="addressComponents" class="mt-3 pt-3 border-t border-gray-200 text-xs text-gray-600 hidden"></div>
             </div>
+
             <a 
                 id="mapsLink" 
                 href="#" 
@@ -55,38 +67,122 @@
                 rel="noopener noreferrer" 
                 class="text-blue-600 hover:underline font-semibold mt-2 hidden"
             >View on Google Maps</a>
+            
+            <!-- ✨ Gemini Feature Buttons -->
+             <button 
+                id="geminiCorrectButton"
+                class="w-full bg-orange-500 text-white font-bold py-3 px-4 mt-4 rounded-lg hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-transform transform hover:scale-105 hidden"
+            >
+                ✨ Suggest Address Correction
+            </button>
+             <button 
+                id="geminiEmailButton"
+                class="w-full bg-red-500 text-white font-bold py-3 px-4 mt-4 rounded-lg hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-transform transform hover:scale-105 hidden"
+            >
+                ✉️ Draft Customer Email
+            </button>
+            <button 
+                id="geminiButton"
+                class="w-full bg-purple-600 text-white font-bold py-3 px-4 mt-4 rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-transform transform hover:scale-105 hidden"
+            >
+                ✨ Suggest Delivery Instructions
+            </button>
+        </div>
+
+        <!-- Gemini Results Sections -->
+        <div id="geminiCorrectResult" class="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200 hidden">
+            <div class="flex justify-between items-start">
+                 <div>
+                    <p class="font-semibold text-gray-800">Suggested Correction:</p>
+                    <p id="geminiCorrectOutput" class="text-gray-600 mt-2 whitespace-pre-wrap"></p>
+                 </div>
+                 <button id="copyCorrectionBtn" class="copy-btn-feedback text-sm bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-1 px-3 ml-2 rounded-md">Copy</button>
+            </div>
+            <button id="useCorrectionButton" class="text-sm bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-1 px-3 mt-3 rounded-md">Use this Address</button>
+        </div>
+        <div id="geminiResult" class="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200 hidden">
+            <p class="font-semibold text-gray-800">Suggested Instructions:</p>
+            <p id="geminiOutput" class="text-gray-600 mt-2 whitespace-pre-wrap"></p>
+        </div>
+         <div id="geminiEmailResult" class="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200 hidden">
+            <p class="font-semibold text-gray-800">Draft Email to Customer:</p>
+            <p id="geminiEmailOutput" class="text-gray-600 mt-2 whitespace-pre-wrap border border-dashed border-gray-300 p-3 rounded-md"></p>
         </div>
         
     </div>
 
     <script>
+        // DOM Elements
         const addressInput = document.getElementById('addressInput');
         const checkButton = document.getElementById('checkButton');
+        const clearInputBtn = document.getElementById('clearInputBtn');
         const resultDiv = document.getElementById('result');
         const statusBox = document.getElementById('statusBox');
         const statusMessage = document.getElementById('statusMessage');
         const formattedAddress = document.getElementById('formattedAddress');
+        const copyVerifiedBtn = document.getElementById('copyVerifiedBtn');
+        const addressComponentsDiv = document.getElementById('addressComponents');
         const mapsLink = document.getElementById('mapsLink');
+        
+        // Gemini Feature Elements
+        const geminiButton = document.getElementById('geminiButton');
+        const geminiResultDiv = document.getElementById('geminiResult');
+        const geminiOutput = document.getElementById('geminiOutput');
+        
+        const geminiCorrectButton = document.getElementById('geminiCorrectButton');
+        const geminiCorrectResultDiv = document.getElementById('geminiCorrectResult');
+        const geminiCorrectOutput = document.getElementById('geminiCorrectOutput');
+        const useCorrectionButton = document.getElementById('useCorrectionButton');
+        const copyCorrectionBtn = document.getElementById('copyCorrectionBtn');
 
-        // --- Your API key is correctly placed here ---
+        const geminiEmailButton = document.getElementById('geminiEmailButton');
+        const geminiEmailResultDiv = document.getElementById('geminiEmailResult');
+        const geminiEmailOutput = document.getElementById('geminiEmailOutput');
+
+        // --- Your Google Maps Geocoding API key ---
         const API_KEY = 'AIzaSyBRvG5Fo2s-ovz9UTGfB-pjKxWpEMLbq9w';
+        
+        // State variables
+        let confirmedAddress = '';
+        let originalAddress = '';
 
+        // UI Event Listeners
+        addressInput.addEventListener('input', () => {
+            clearInputBtn.classList.toggle('hidden', addressInput.value.length === 0);
+        });
+
+        clearInputBtn.addEventListener('click', () => {
+            addressInput.value = '';
+            clearInputBtn.classList.add('hidden');
+        });
+
+        // Main address verification logic
         checkButton.addEventListener('click', async () => {
             const address = addressInput.value.trim();
-            const apiKey = API_KEY; // Use the constant
+            originalAddress = address;
+            const apiKey = API_KEY;
 
-            resultDiv.classList.remove('hidden');
+            // Hide all results on new search
+            resultDiv.classList.add('hidden');
             mapsLink.classList.add('hidden');
+            geminiButton.classList.add('hidden');
+            geminiCorrectButton.classList.add('hidden');
+            geminiEmailButton.classList.add('hidden');
+            geminiResultDiv.classList.add('hidden');
+            geminiCorrectResultDiv.classList.add('hidden');
+            geminiEmailResultDiv.classList.add('hidden');
+            addressComponentsDiv.classList.add('hidden');
+            copyVerifiedBtn.classList.add('hidden');
             formattedAddress.textContent = '';
+            
+            resultDiv.classList.remove('hidden');
 
-
-            if (address === '') { // Simplified check
+            if (address === '') {
                 statusBox.className = 'p-4 rounded-lg mb-4 text-left bg-red-100 text-red-800';
                 statusMessage.textContent = 'Please enter an address.';
                 return;
             }
             
-            // Set loading state
             statusBox.className = 'p-4 rounded-lg mb-4 text-left bg-gray-100 text-gray-800';
             statusMessage.textContent = 'Verifying address...';
 
@@ -99,42 +195,173 @@
 
                 if (data.status === 'OK') {
                     const result = data.results[0];
-                    const locationType = result.geometry.location_type;
                     const fullAddress = result.formatted_address;
 
                     formattedAddress.textContent = `Suggested Address: ${fullAddress}`;
                     mapsLink.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`;
                     mapsLink.textContent = `Open "${fullAddress}" in Google Maps`;
                     mapsLink.classList.remove('hidden');
+                    
+                    confirmedAddress = fullAddress;
+                    geminiButton.classList.remove('hidden'); 
+                    copyVerifiedBtn.classList.remove('hidden');
+                    
+                    displayAddressComponents(result.address_components);
 
-                    if (locationType === 'ROOFTOP') {
+                    if (result.geometry.location_type === 'ROOFTOP' || result.geometry.location_type === 'RANGE_INTERPOLATED') {
                         statusBox.className = 'p-4 rounded-lg mb-4 text-left bg-green-100 text-green-800';
                         statusMessage.textContent = 'Confirmed: Precise Location';
-                    } else if (locationType === 'RANGE_INTERPOLATED') {
-                        statusBox.className = 'p-4 rounded-lg mb-4 text-left bg-green-100 text-green-800';
-                        statusMessage.textContent = 'Confirmed: Street Address (Estimated)';
                     } else {
                         statusBox.className = 'p-4 rounded-lg mb-4 text-left bg-yellow-100 text-yellow-800';
                         statusMessage.textContent = 'Partial Match: Approximate Location Found';
+                        geminiCorrectButton.classList.remove('hidden');
                     }
-
                 } else if (data.status === 'ZERO_RESULTS') {
                     statusBox.className = 'p-4 rounded-lg mb-4 text-left bg-red-100 text-red-800';
                     statusMessage.textContent = 'Address Not Found';
                     formattedAddress.textContent = 'The provided address could not be located.';
+                    geminiCorrectButton.classList.remove('hidden');
+                    geminiEmailButton.classList.remove('hidden');
                 } else {
                     statusBox.className = 'p-4 rounded-lg mb-4 text-left bg-red-100 text-red-800';
                     statusMessage.textContent = `API Error: ${data.status}`;
                     formattedAddress.textContent = data.error_message || 'Check your API key and permissions.';
                 }
-
             } catch (error) {
                 statusBox.className = 'p-4 rounded-lg mb-4 text-left bg-red-100 text-red-800';
                 statusMessage.textContent = 'Network Error';
-                formattedAddress.textContent = 'Could not connect to Google Maps API. Please check your connection and try again.';
+                formattedAddress.textContent = 'Could not connect to Google Maps API.';
                 console.error('Error fetching geocode data:', error);
             }
         });
+
+        // --- Helper and Feature Functions ---
+
+        function displayAddressComponents(components) {
+            addressComponentsDiv.innerHTML = '';
+            const mapping = {
+                street_number: 'Street No.',
+                route: 'Street',
+                locality: 'City',
+                administrative_area_level_1: 'State',
+                country: 'Country',
+                postal_code: 'ZIP Code'
+            };
+            let html = '<div class="grid grid-cols-2 gap-x-4 gap-y-1">';
+            for (const component of components) {
+                const type = component.types[0];
+                if (mapping[type]) {
+                    html += `<div><strong>${mapping[type]}:</strong> ${component.long_name}</div>`;
+                }
+            }
+            html += '</div>';
+            addressComponentsDiv.innerHTML = html;
+            addressComponentsDiv.classList.remove('hidden');
+        }
+
+        function copyToClipboard(text, button) {
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = button.textContent;
+                button.textContent = 'Copied!';
+                button.classList.add('bg-green-200');
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.classList.remove('bg-green-200');
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+            });
+        }
+        
+        copyVerifiedBtn.addEventListener('click', () => copyToClipboard(confirmedAddress, copyVerifiedBtn));
+        copyCorrectionBtn.addEventListener('click', () => copyToClipboard(geminiCorrectOutput.textContent, copyCorrectionBtn));
+
+        // --- Gemini Feature Event Listeners ---
+        geminiButton.addEventListener('click', () => getDeliveryInstructions(confirmedAddress));
+        geminiCorrectButton.addEventListener('click', () => getCorrectedAddress(originalAddress));
+        geminiEmailButton.addEventListener('click', () => draftCustomerEmail(originalAddress));
+        
+        useCorrectionButton.addEventListener('click', () => {
+            const corrected = geminiCorrectOutput.textContent.trim();
+            if (corrected) {
+                addressInput.value = corrected;
+                checkButton.click();
+            }
+        });
+
+        // --- Gemini API Call Functions ---
+        async function callGemini(systemPrompt, userQuery, button, outputElement) {
+            outputElement.parentElement.classList.remove('hidden');
+            outputElement.textContent = 'Generating...';
+            button.disabled = true;
+            const originalButtonText = button.innerHTML;
+            button.innerHTML = '✨ Thinking...';
+
+            const geminiApiKey = ""; // Handled by environment
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${geminiApiKey}`;
+
+            const payload = {
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+                contents: [{ parts: [{ text: userQuery }] }]
+            };
+
+            try {
+                let response;
+                let delay = 1000;
+                for (let i = 0; i < 5; i++) {
+                    response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (response.status !== 429) break;
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    delay *= 2;
+                }
+                
+                if (!response.ok) throw new Error(`API Error: ${response.status} ${response.statusText}`);
+                const result = await response.json();
+                const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                if (text) {
+                    outputElement.textContent = text.trim();
+                } else {
+                    outputElement.textContent = 'The model returned an empty response.';
+                    console.error('Unexpected API response:', result);
+                }
+            } catch (error) {
+                outputElement.textContent = 'Failed to get a suggestion. See console for details.';
+                console.error('Error calling Gemini API:', error);
+            } finally {
+                button.disabled = false;
+                button.innerHTML = originalButtonText;
+            }
+        }
+
+        function getDeliveryInstructions(address) {
+            const systemPrompt = `You are a helpful logistics assistant... The instruction must be a single, clear sentence.`;
+            const userQuery = `Generate a delivery instruction for this address: "${address}"`;
+            callGemini(systemPrompt, userQuery, geminiButton, geminiOutput);
+        }
+
+        function getCorrectedAddress(address) {
+            const systemPrompt = `You are an expert address correction service... Return only the corrected address.`;
+            const userQuery = `Correct this potentially invalid address: "${address}"`;
+            callGemini(systemPrompt, userQuery, geminiCorrectButton, geminiCorrectOutput);
+        }
+
+        function draftCustomerEmail(address) {
+             const systemPrompt = `You are a customer service agent for an e-commerce store. A customer's address could not be verified. Draft a friendly, concise, and professional email to the customer.
+- Start with a friendly greeting (e.g., "Hello,").
+- State the purpose: you're preparing their order for shipment but ran into a small issue verifying their address.
+- Mention the address they provided.
+- Politely ask them to reply to the email to confirm or correct their address.
+- End with a thank you and a closing (e.g., "Best regards,").
+- Keep the tone helpful and not accusatory.`;
+            const userQuery = `Draft the email for an issue with this address: "${address}"`;
+            callGemini(systemPrompt, userQuery, geminiEmailButton, geminiEmailOutput);
+        }
+
     </script>
 
 </body>
