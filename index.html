@@ -37,6 +37,16 @@
 
         <!-- Input Form -->
         <div class="space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label for="customerEmailInput" class="block text-sm font-medium text-gray-700 mb-1">Customer Email</label>
+                    <input type="email" id="customerEmailInput" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow" placeholder="customer@example.com">
+                </div>
+                <div>
+                    <label for="orderNumberInput" class="block text-sm font-medium text-gray-700 mb-1">Order Number</label>
+                    <input type="text" id="orderNumberInput" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow" placeholder="#12345">
+                </div>
+            </div>
             <div class="relative">
                 <label for="addressInput" class="block text-sm font-medium text-gray-700 mb-1">Address</label>
                 <textarea 
@@ -113,6 +123,9 @@
          <div id="geminiEmailResult" class="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200 hidden">
             <p class="font-semibold text-gray-800">Draft Email to Customer:</p>
             <p id="geminiEmailOutput" class="text-gray-600 mt-2 whitespace-pre-wrap border border-dashed border-gray-300 p-3 rounded-md"></p>
+            <button id="openInGmailButton" class="w-full bg-blue-600 text-white font-bold py-3 px-4 mt-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-transform transform hover:scale-105 hidden">
+                 🚀 Open in Gmail
+            </button>
         </div>
         <div id="geminiTypeResult" class="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200 hidden">
             <p class="font-semibold text-gray-800">Address Type Analysis:</p>
@@ -160,6 +173,8 @@
 
     <script>
         // DOM Elements
+        const customerEmailInput = document.getElementById('customerEmailInput');
+        const orderNumberInput = document.getElementById('orderNumberInput');
         const addressInput = document.getElementById('addressInput');
         const checkButton = document.getElementById('checkButton');
         const clearInputBtn = document.getElementById('clearInputBtn');
@@ -181,6 +196,7 @@
         const geminiEmailButton = document.getElementById('geminiEmailButton');
         const geminiEmailResultDiv = document.getElementById('geminiEmailResult');
         const geminiEmailOutput = document.getElementById('geminiEmailOutput');
+        const openInGmailButton = document.getElementById('openInGmailButton');
 
         const geminiTypeButton = document.getElementById('geminiTypeButton');
         const geminiTypeResultDiv = document.getElementById('geminiTypeResult');
@@ -201,7 +217,6 @@
         const height = document.getElementById('height');
 
         // --- Your Google Maps Geocoding API key ---
-        // IMPORTANT: Replace the placeholder with your actual API key
         const API_KEY = 'AIzaSyBRvG5Fo2s-ovz9UTGfB-pjKxWpEMLbq9w';
         
         // State variables
@@ -233,6 +248,7 @@
             geminiCorrectResultDiv.classList.add('hidden');
             geminiEmailResultDiv.classList.add('hidden');
             geminiTypeResultDiv.classList.add('hidden');
+            openInGmailButton.classList.add('hidden');
             shippingEstimatorContainer.style.display = 'none';
             shippingEstimatorContent.classList.add('hidden');
             shippingChevron.classList.remove('rotate-180');
@@ -249,7 +265,7 @@
                 return;
             }
 
-            if (apiKey === 'PASTE_YOUR_GOOGLE_MAPS_API_KEY_HERE') {
+            if (apiKey === 'AIzaSyBRvG5Fo2s-ovz9UTGfB-pjKxWpEMLbq9w') {
                 statusBox.className = 'p-4 rounded-lg mb-4 text-left bg-red-100 text-red-800';
                 statusMessage.textContent = 'API Key Not Set';
                 formattedAddress.textContent = 'Please add your Google Maps API key to the script.';
@@ -362,6 +378,30 @@
             if (corrected) { addressInput.value = corrected; checkButton.click(); }
         });
 
+        openInGmailButton.addEventListener('click', () => {
+            const to = customerEmailInput.value.trim();
+            if (!to) {
+                alert('Please enter a customer email address.');
+                return;
+            }
+
+            const fullText = geminiEmailOutput.textContent;
+            const subjectMatch = fullText.match(/^Subject:(.*)/);
+            let subject = "Action Required: Issue with your shipping address";
+            let body = fullText;
+
+            if (subjectMatch && subjectMatch[1]) {
+                subject = subjectMatch[1].trim();
+                body = fullText.substring(subjectMatch[0].length).trim();
+            }
+
+            const encodedSubject = encodeURIComponent(subject);
+            const encodedBody = encodeURIComponent(body);
+            
+            const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${to}&su=${encodedSubject}&body=${encodedBody}`;
+            window.open(gmailUrl, '_blank');
+        });
+
         // --- API Call Functions ---
         async function callGemini(systemPrompt, userQuery, button, outputElement, resultDiv) {
             resultDiv.classList.remove('hidden');
@@ -369,8 +409,12 @@
             button.disabled = true;
             const originalButtonText = button.innerHTML;
             button.innerHTML = '✨ Thinking...';
+            
+            if (button.id === 'geminiEmailButton') {
+                openInGmailButton.classList.add('hidden');
+            }
 
-            const geminiApiKey = API_KEY; // <<< THIS IS THE FIX
+            const geminiApiKey = API_KEY;
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${geminiApiKey}`;
 
             const payload = {
@@ -391,7 +435,12 @@
                 const result = await response.json();
                 const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
 
-                if (text) { outputElement.textContent = text.trim(); } 
+                if (text) { 
+                    outputElement.textContent = text.trim(); 
+                    if (button.id === 'geminiEmailButton') {
+                       openInGmailButton.classList.remove('hidden');
+                    }
+                } 
                 else { outputElement.textContent = 'The model returned an empty response.'; console.error('Unexpected API response:', result); }
             } catch (error) {
                 outputElement.textContent = 'Failed to get a suggestion. See console for details.';
@@ -409,8 +458,19 @@
         }
 
         function draftCustomerEmail(address) {
-            const systemPrompt = `You are a customer service agent drafting a friendly, professional email to a customer whose address could not be verified. Ask them to confirm or correct their details.`;
-            const userQuery = `Draft the email for an issue with this address: "${address}"`;
+            const orderNumber = orderNumberInput.value.trim();
+            const systemPrompt = `You are a customer service agent named Aisha from Tarife Attar. Draft a friendly, professional email.
+- The goal is to ask the customer to confirm or correct their address because it could not be verified.
+- If an order number is provided, include it in the email for reference.
+- IMPORTANT: Always start your response with "Subject:" on the first line, followed by the subject text.
+- After the subject line, add two newlines, then write the email body.
+- Sign the email as "Best regards,\nAisha\nTarife Attar".`;
+            
+            let userQuery = `Draft the email for an issue with this address: "${address}".`;
+            if (orderNumber) {
+                userQuery += ` The customer's order number is: "${orderNumber}".`;
+            }
+
             callGemini(systemPrompt, userQuery, geminiEmailButton, geminiEmailOutput, geminiEmailResultDiv);
         }
 
@@ -438,7 +498,7 @@
 - To Address: "${confirmedAddress}"
 - Dimensions: ${pkg.l}"L x ${pkg.w}"W x ${pkg.h}"H
 - Weight: ${pkg.weight} oz`;
-            callGemin(systemPrompt, userQuery, getRatesButton, shippingOutput, shippingResultDiv);
+            callGemini(systemPrompt, userQuery, getRatesButton, shippingOutput, shippingResultDiv);
         }
 
     </script>
