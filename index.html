@@ -13,16 +13,6 @@
         .copy-btn-feedback {
             transition: background-color 0.3s ease;
         }
-        .form-section {
-            display: none;
-            margin-top: 1.5rem;
-            padding-top: 1.5rem;
-            border-top: 1px solid #e5e7eb;
-        }
-        #shippingEstimatorContent {
-            transition: max-height 0.3s ease-in-out;
-            overflow: hidden;
-        }
     </style>
 </head>
 <body class="bg-gray-100 flex items-center justify-center min-h-screen py-12">
@@ -101,12 +91,6 @@
             >
                 ✉️ Draft Customer Email
             </button>
-            <button 
-                id="geminiTypeButton"
-                class="w-full bg-blue-600 text-white font-bold py-3 px-4 mt-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-transform transform hover:scale-105 hidden"
-            >
-                🔍 Identify Address Type
-            </button>
         </div>
 
         <!-- Gemini Results Sections -->
@@ -127,48 +111,6 @@
                  🚀 Open in Gmail
             </button>
         </div>
-        <div id="geminiTypeResult" class="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200 hidden">
-            <p class="font-semibold text-gray-800">Address Type Analysis:</p>
-            <p id="geminiTypeOutput" class="text-gray-600 mt-2 whitespace-pre-wrap"></p>
-        </div>
-
-        <!-- Shipping Estimator Section -->
-        <div id="shippingEstimatorContainer" class="form-section">
-            <button id="shippingEstimatorToggle" class="w-full flex justify-between items-center text-left p-4 bg-gray-100 hover:bg-gray-200 rounded-lg focus:outline-none transition-colors">
-                <h2 class="text-xl font-bold text-gray-800">Shipping Rate Estimator</h2>
-                <svg id="shippingChevron" class="w-6 h-6 transform transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
-            </button>
-            <div id="shippingEstimatorContent" class="hidden mt-4">
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <label for="originZip" class="block text-sm font-medium text-gray-700">Origin ZIP Code</label>
-                        <input type="text" id="originZip" value="94601" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
-                    </div>
-                     <div>
-                        <label for="weight" class="block text-sm font-medium text-gray-700">Weight (oz)</label>
-                        <input type="number" id="weight" value="2" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
-                    </div>
-                </div>
-                <div class="mt-4">
-                    <p class="block text-sm font-medium text-gray-700">Package Dimensions (inches)</p>
-                    <div class="grid grid-cols-3 gap-2 mt-1">
-                        <input type="number" id="length" placeholder="L" value="10" class="block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
-                        <input type="number" id="width" placeholder="W" value="7" class="block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
-                        <input type="number" id="height" placeholder="H" value="1" class="block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
-                    </div>
-                </div>
-                <button id="getRatesButton" class="w-full bg-green-600 text-white font-bold py-3 px-4 mt-6 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-transform transform hover:scale-105">
-                    💰 Get Shipping Estimates
-                </button>
-            </div>
-        </div>
-        
-        <div id="shippingResult" class="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200 hidden">
-            <p class="font-semibold text-gray-800">Estimated Shipping Rates:</p>
-            <p class="text-xs text-gray-500 mb-2 italic">Note: These are AI-powered estimates and not official quotes.</p>
-            <div id="shippingOutput" class="text-gray-600 mt-2 whitespace-pre-wrap"></div>
-        </div>
-        
     </div>
 
     <script>
@@ -198,24 +140,6 @@
         const geminiEmailOutput = document.getElementById('geminiEmailOutput');
         const openInGmailButton = document.getElementById('openInGmailButton');
 
-        const geminiTypeButton = document.getElementById('geminiTypeButton');
-        const geminiTypeResultDiv = document.getElementById('geminiTypeResult');
-        const geminiTypeOutput = document.getElementById('geminiTypeOutput');
-
-        // Shipping Estimator Elements
-        const shippingEstimatorContainer = document.getElementById('shippingEstimatorContainer');
-        const shippingEstimatorToggle = document.getElementById('shippingEstimatorToggle');
-        const shippingEstimatorContent = document.getElementById('shippingEstimatorContent');
-        const shippingChevron = document.getElementById('shippingChevron');
-        const getRatesButton = document.getElementById('getRatesButton');
-        const shippingResultDiv = document.getElementById('shippingResult');
-        const shippingOutput = document.getElementById('shippingOutput');
-        const originZip = document.getElementById('originZip');
-        const weight = document.getElementById('weight');
-        const length = document.getElementById('length');
-        const width = document.getElementById('width');
-        const height = document.getElementById('height');
-
         // --- Your Google Maps Geocoding API key ---
         const API_KEY = 'AIzaSyBRvG5Fo2s-ovz9UTGfB-pjKxWpEMLbq9w';
         
@@ -244,15 +168,9 @@
             mapsLink.classList.add('hidden');
             geminiCorrectButton.classList.add('hidden');
             geminiEmailButton.classList.add('hidden');
-            geminiTypeButton.classList.add('hidden');
             geminiCorrectResultDiv.classList.add('hidden');
             geminiEmailResultDiv.classList.add('hidden');
-            geminiTypeResultDiv.classList.add('hidden');
             openInGmailButton.classList.add('hidden');
-            shippingEstimatorContainer.style.display = 'none';
-            shippingEstimatorContent.classList.add('hidden');
-            shippingChevron.classList.remove('rotate-180');
-            shippingResultDiv.classList.add('hidden');
             addressComponentsDiv.classList.add('hidden');
             copyVerifiedBtn.classList.add('hidden');
             formattedAddress.textContent = '';
@@ -265,7 +183,7 @@
                 return;
             }
 
-            if (apiKey === 'AIzaSyBRvG5Fo2s-ovz9UTGfB-pjKxWpEMLbq9w') {
+            if (apiKey === 'PASTE_YOUR_GOOGLE_MAPS_API_KEY_HERE') {
                 statusBox.className = 'p-4 rounded-lg mb-4 text-left bg-red-100 text-red-800';
                 statusMessage.textContent = 'API Key Not Set';
                 formattedAddress.textContent = 'Please add your Google Maps API key to the script.';
@@ -293,8 +211,6 @@
                     mapsLink.classList.remove('hidden');
                     
                     copyVerifiedBtn.classList.remove('hidden');
-                    geminiTypeButton.classList.remove('hidden');
-                    shippingEstimatorContainer.style.display = 'block';
                     
                     displayAddressComponents(result.address_components);
 
@@ -362,16 +278,9 @@
         copyVerifiedBtn.addEventListener('click', () => copyToClipboard(confirmedAddress, copyVerifiedBtn));
         copyCorrectionBtn.addEventListener('click', () => copyToClipboard(geminiCorrectOutput.textContent, copyCorrectionBtn));
 
-        // --- Gemini & Shipping Feature Event Listeners ---
+        // --- Gemini Feature Event Listeners ---
         geminiCorrectButton.addEventListener('click', () => getCorrectedAddress(originalAddress));
         geminiEmailButton.addEventListener('click', () => draftCustomerEmail(originalAddress));
-        geminiTypeButton.addEventListener('click', () => getAddressType(confirmedAddress));
-        getRatesButton.addEventListener('click', getShippingEstimates);
-        
-        shippingEstimatorToggle.addEventListener('click', () => {
-            shippingEstimatorContent.classList.toggle('hidden');
-            shippingChevron.classList.toggle('rotate-180');
-        });
         
         useCorrectionButton.addEventListener('click', () => {
             const corrected = geminiCorrectOutput.textContent.trim();
@@ -473,34 +382,6 @@
 
             callGemini(systemPrompt, userQuery, geminiEmailButton, geminiEmailOutput, geminiEmailResultDiv);
         }
-
-        function getAddressType(address) {
-            const systemPrompt = `You are a logistics expert. Classify the address as Residential, Commercial/Business, PO Box, or Military. Provide the type and a one-sentence explanation.`;
-            const userQuery = `Classify this address: "${address}"`;
-            callGemini(systemPrompt, userQuery, geminiTypeButton, geminiTypeOutput, geminiTypeResultDiv);
-        }
-
-        function getShippingEstimates() {
-            const pkg = {
-                origin: originZip.value,
-                l: length.value,
-                w: width.value,
-                h: height.value,
-                weight: weight.value
-            };
-            const systemPrompt = `You are a shipping rate estimator for an e-commerce company. Provide estimated shipping costs for a package based on the user's details.
-- Analyze the origin, destination, and package specs.
-- Provide estimates for USPS, UPS, and FedEx for their most common economy services (like Ground).
-- Format the output as a simple list with the carrier, service name, and estimated price.
-- Clearly state these are non-binding estimates.`;
-            const userQuery = `Estimate shipping rates for a package with these details:
-- From ZIP: ${pkg.origin}
-- To Address: "${confirmedAddress}"
-- Dimensions: ${pkg.l}"L x ${pkg.w}"W x ${pkg.h}"H
-- Weight: ${pkg.weight} oz`;
-            callGemini(systemPrompt, userQuery, getRatesButton, shippingOutput, shippingResultDiv);
-        }
-
     </script>
 
 </body>
